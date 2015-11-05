@@ -38,7 +38,7 @@ class PersonItem(Item):
     url = Field()
 
 class AwardItem(Item):
-    awardName = Field()
+    name = Field()
     year = Field()
     category = Field()
     categoryDesc = Field()
@@ -47,7 +47,7 @@ class AwardItem(Item):
 
 class CastItem(Item):
     imdbId = Field()
-    actorName = Field()
+    name = Field()
     characterName = Field()
     url = Field()
     ranking = Field()

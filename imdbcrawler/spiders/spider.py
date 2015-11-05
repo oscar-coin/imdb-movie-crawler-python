@@ -42,9 +42,10 @@ class ImdbSpider(scrapy.Spider):
         # parse Director
         dir = PersonItem()
         dir['name'] = self.getXpath("//div[@itemprop='director']/a/span/text()", response)[0]
-        dir['url'] = self.getXpath("//div[@itemprop='director']/a/@href", response)[0]
-        if dir['url']:
-            dir['imdbId'] = self.resolveId(dir["url"], '/name/')
+        dirBaseUrl = self.getXpath("//div[@itemprop='director']/a/@href", response)[0]
+        if dirBaseUrl:
+            dir['url'] = response.urljoin(dirBaseUrl)
+            dir['imdbId'] = self.resolveId(dirBaseUrl, '/name/')
         item['director'] = dir
 
         # parse Writers
@@ -52,10 +53,10 @@ class ImdbSpider(scrapy.Spider):
         for idx, writerSel in enumerate(response.xpath("//div[@itemprop='creator']/a/span/text()").extract()):
             wri = PersonItem()
             wri['name'] = writerSel.strip()
-            baseUrl = self.getXpath("//div[@itemprop='creator']/a["+str(idx+1)+"]/@href", response)[0]
-            if baseUrl:
-                wri['url'] = response.urljoin(baseUrl)
-                wri['imdbId'] = self.resolveId(dir["url"], '/name/')
+            wriBaseUrl = self.getXpath("//div[@itemprop='creator']/a["+str(idx+1)+"]/@href", response)[0]
+            if wriBaseUrl:
+                wri['url'] = response.urljoin(wriBaseUrl)
+                wri['imdbId'] = self.resolveId(wriBaseUrl, '/name/')
             item['writers'].append(wri)
 
         # parse genre
@@ -101,7 +102,7 @@ class ImdbSpider(scrapy.Spider):
 
             for idx, sel in enumerate(sel.xpath("tr")):
                 award = AwardItem()
-                award["awardName"] = name
+                award["name"] = name
                 award["year"] = year
                 award["category"] = self.getXpath("td[@class='title_award_outcome']/span[@class='award_category']/text()", sel)[0]
                 award["categoryDesc"] = self.getXpath("td[@class='award_description']/text()", sel)[0]
@@ -118,7 +119,7 @@ class ImdbSpider(scrapy.Spider):
                 continue
             cast = CastItem()
             cast['ranking'] = idx
-            cast['actorName'] = self.getXpath("td[2]/a/span/text()", sel)[0]
+            cast['name'] = self.getXpath("td[2]/a/span/text()", sel)[0]
             baseUrl = self.getXpath("td[2]/a/@href", sel)[0]
             if baseUrl:
                 cast['url'] = response.urljoin(baseUrl)
