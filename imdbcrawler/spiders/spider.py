@@ -10,15 +10,15 @@ class ImdbSpider(scrapy.Spider):
     allowed_domains = ["imdb.com"]
     url_bases = ["http://www.imdb.com/"]
     start_urls = [
-        "http://www.imdb.com/search/title?at=0&release_date=1930-01-01,2016-02-01&title_type=feature&count=100"
+        "http://www.imdb.com/search/title?at=0&count=100&release_date=2002-01-01,2016-02-01&title_type=feature",
+        "http://www.imdb.com/search/title?at=0&count=100&release_date=1972-01-01,2002-01-01&title_type=feature",
+        "http://www.imdb.com/search/title?at=0&count=100&release_date=1930-01-01,1972-01-01&title_type=feature"
     ]
 
     def parse(self,response):
-        index = 0
         for idx, sel in enumerate(response.xpath("//*[@class='results']/tr")):
             if idx == 0:
                 continue
-            index += 1
             baseUrl = self.getXpath("td[@class='title']/a/@href", sel)[0]
             imdbId = self.resolveId(baseUrl, '/title/')
             if self.db[self.collection_name].find({'imdbId': imdbId}).limit(1).count():
@@ -28,7 +28,6 @@ class ImdbSpider(scrapy.Spider):
             item['title'] = self.getXpath("td[@class='title']/a/text()", sel)[0]
             item['imdbId'] = imdbId
             item['url'] = response.urljoin(baseUrl)
-            item['ranking'] = index
             yield scrapy.Request(response.urljoin(item['url']), meta={'item':item }, callback=self.parseMovies, priority=1)
 
         # get the next page
@@ -47,6 +46,9 @@ class ImdbSpider(scrapy.Spider):
             dir['url'] = response.urljoin(dirBaseUrl)
             dir['imdbId'] = self.resolveId(dirBaseUrl, '/name/')
         item['director'] = dir
+
+        #parse ranking
+        item['ranking'] = self.getXpath("//*[@id='metaRank']/text()", response)[0]
 
         # parse Writers
         item['writers'] = []
@@ -67,7 +69,7 @@ class ImdbSpider(scrapy.Spider):
 
         return self.parseCasts(item, response)
 
-    maxReleaseInfo = 5
+    maxReleaseInfo = 10
     def parseReleaseInfo(self, response):
         # parse the release info
         item = response.meta['item']
