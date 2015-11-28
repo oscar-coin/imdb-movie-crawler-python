@@ -1,4 +1,6 @@
 import pymongo
+from bson import ObjectId
+
 
 class MongoPipeline(object):
 
@@ -25,5 +27,6 @@ class MongoPipeline(object):
         self.client.close()
 
     def process_item(self, item, spider):
-        self.db[self.collection_name].insert(dict(item))
+        if item['date']:
+            self.db[self.collection_name].update({"_id": ObjectId(item["_id"])}, {"$set": {"releaseDate": item["date"]}})
         return item
